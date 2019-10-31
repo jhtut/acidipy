@@ -237,7 +237,8 @@ class AciActorClass:
                 obj.__class__ = self.prepare_class
                 obj.__patch__()
             return obj
-        raise ExceptAcidipyCreateObject(self.controller, self.class_name, ExceptAcidipyProcessing(self.controller, 'Creation Failed'))
+        raise ExceptAcidipyCreateObject(self.controller, self.class_name, ExceptAcidipyProcessing(self.controller, 'Creation Failed'))
+
 #===============================================================================
 # Multi Domain Class
 #===============================================================================
@@ -489,6 +490,12 @@ class AciSubnetActor(AciActorClass):
 class AciEPGActor(AciActorClass):
     def __init__(self, parent): AciActorClass.__init__(self, parent, 'fvAEPg', '/epg-%s', 'name')
  
+class AciVMDomainActor(AciActorClass):
+    def __init__(self, parent): AciActorClass.__init__(self, parent, 'vmmDomP', '/dom-%s', 'name')
+
+class AciPhyDomainActor(AciActorClass):
+    def __init__(self, parent): AciActorClass.__init__(self, parent, 'physDomP', '/phys-%s', 'name')
+ 
 class AciEndpointActor(AciActorClass):
     def __init__(self, parent): AciActorClass.__init__(self, parent, 'fvCEp', '/cep-%s', 'name')
  
@@ -578,6 +585,7 @@ class AciTenant(AciObject):
     
     @property
     def AppProfile(self): return AciAppProfileActor(self)
+
     
 class AciFilter(AciObject):
     
@@ -642,7 +650,7 @@ class AciSubject(AciObject):
         raise ExceptAcidipyRelateObject(self.controller, self['dn'] + '<->' + obj['dn'], ExceptAcidipyProcessing(self.controller, 'Relate Failed'))
          
 class AciSubnet(AciObject): pass
-     
+
 class AciEPG(AciObject):
     
     @property
@@ -669,8 +677,22 @@ class AciEPG(AciObject):
             try: ret = self.controller.post('/api/mo/' + self['dn'] + '.json', data=json.dumps({'fvRsPathAtt' : {'attributes' : attributes}}))
             except Exception as e: raise ExceptAcidipyRelateObject(self.controller, self['dn'] + '<->' + obj['dn'], e)
             if ret: return True
+        elif isinstance(obj,AciVMDomain):
+            attributes['tDn'] = obj['dn']
+            try: ret = self.controller.post('/api/mo/' + self['dn'] + '.json', data=json.dumps({'fvRsDomAtt' : {'attributes' : attributes}}))
+            except Exception as e: raise ExceptAcidipyRelateObject(self.controller, self['dn'] + '<->' + obj['dn'], e)
+            if ret: return True
+        elif isinstance(obj,AciPhyDomain):
+            attributes['tDn'] = obj['dn']
+            try: ret = self.controller.post('/api/mo/' + self['dn'] + '.json', data=json.dumps({'fvRsDomAtt' : {'attributes' : attributes}}))
+            except Exception as e: raise ExceptAcidipyRelateObject(self.controller, self['dn'] + '<->' + obj['dn'], e)
+            if ret: return True
         raise ExceptAcidipyRelateObject(self.controller, self['dn'] + '<->' + obj['dn'], ExceptAcidipyProcessing(self.controller, 'Relate Failed'))
-     
+
+class AciVMDomain(AciObject): pass
+
+class AciPhyDomain(AciObject): pass    
+
 class AciEndpoint(AciObject): pass
 
 class AciPod(AciObject):
@@ -776,6 +798,12 @@ class Controller(Session, AciObject):
         
     class EPG(AciGlobalClass):
         def __init__(self): AciGlobalClass.__init__(self, 'fvAEPg')
+    
+    class VMDomain(AciGlobalClass):
+        def __init__(self): AciGlobalClass.__init__(self, 'vmmDomP')
+    
+    class PhyDomain(AciGlobalClass):
+        def __init__(self): AciGlobalClass.__init__(self, 'physDomP')
     
     class Endpoint(AciGlobalClass):
         def __init__(self): AciGlobalClass.__init__(self, 'fvCEp')
@@ -942,6 +970,8 @@ class Controller(Session, AciObject):
         
         self.Tenant = AciTenantActor(RootDesc(self, 'uni'))
         self.Pod = AciPodActor(RootDesc(self, 'topology'))
+        self.VMDomain = AciVMDomainActor(RootDesc(self, 'uni/vmmp-VMware'))
+        self.PhyDomain = AciPhyDomainActor(RootDesc(self,'uni'))
         
     def close(self):
         if self.etrigger != None: self.etrigger.close()
@@ -1023,6 +1053,12 @@ class MultiDomain(dict, Inventory):
     
     class EPG(AciMultiDomClass):
         def __init__(self): AciMultiDomClass.__init__(self, 'EPG')
+    
+    class VMDomain(AciMultiDomClass):
+        def __init__(self): AciMultiDomClass.__init__(self, 'VMDomain')	
+    
+    class PhyDomain(AciMultiDomClass):
+        def __init__(self): AciMultiDomClass.__init__(self, 'PhyDomain')	
     
     class Endpoint(AciMultiDomClass):
         def __init__(self): AciMultiDomClass.__init__(self, 'Endpoint')

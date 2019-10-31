@@ -2,6 +2,8 @@
 Created on 2016. 10. 24.
 
 @author: "comfact"
+
+@updated: "Joe Htut"
 '''
 
 #===============================================================================
@@ -34,6 +36,8 @@ PREPARE_CLASSES = {
     'fabricPathEp' :         'AciPath',
     'topSystem' :            'AciSystem',
     'l1PhysIf' :             'AciPhysIf',
+    'vmmDomP' :              'AciVMDomain',
+    'physDomP' :             'AciPhyDomain',
 }
 
 PREPARE_ATTRIBUTES = {
